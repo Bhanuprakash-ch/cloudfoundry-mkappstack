@@ -1,0 +1,64 @@
+# Copyright (c) 2015 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+---
+applications:
+- name: cf-env
+  services:
+  - cf-env-svc02
+  - cf-env-svc03
+  env:
+    VERSION: 0.1-1
+    upsi_names: cf-env-svc01
+- name: cf-env-test02
+  services:
+  - cf-env-svc04
+  env:
+    artifact_name: cf-env
+    VERSION: 0.2-1
+    upsi_names: cf-env-svc02
+- name: cf-env-test03
+  services:
+  - cf-env-svc02
+  env:
+    artifact_srcurl: https://my.artifact-store.org/common/path/to/artifacts/cf-env/0.3-1/cf-env-0.3-1.zip
+    VERSION: 0.3-1
+    upsi_names: cf-env-svc03
+- name: cf-env-test04
+  services:
+  - cf-env-db
+  env:
+    artifact_name: cf-env
+    VERSION: 0.4-1
+    upsi_names: cf-env-svc04
+- name: cf-env-test05
+  env:
+    artifact_name: cf-env
+    VERSION: 0.5-1
+    service_broker_names: cf-env-broker
+user_provided_service_instances:
+- name: cf-env-svc01
+- name: cf-env-svc02
+- name: cf-env-svc03
+- name: cf-env-svc04
+service_brokers:
+- name: cf-env-broker
+service_instances:
+- name: cf-env-db
+  service_plan:
+    name: free
+    service:
+      label: cfenvsvc
+      broker: cf-env-broker

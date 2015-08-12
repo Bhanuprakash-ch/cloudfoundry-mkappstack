@@ -1,0 +1,37 @@
+#!/bin/sh
+# Copyright (c) 2015 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# setting cf api, org, target; also authenticating if necessary
+
+if [ "$#" -ne 6 ]; then
+  echo "Usage: ${0} cfbinary cfapi cfuser cfpass cforg cfspace"
+  exit 1
+fi
+
+cfcall=${1}
+cfapi=${2}
+cfuser=${3}
+cfpass=${4}
+cforg=${5}
+cfspace=${6}
+
+if ! ${cfcall} api |grep -q ${2}; then
+  ${cfcall} api ${cfapi} --skip-ssl-validation;
+fi
+if ! ${cfcall} target -o ${cforg} -s ${cfspace}; then
+  ${cfcall} auth ${cfuser} "${cfpass}"
+  ${cfcall} target -o ${cforg} -s ${cfspace}
+fi

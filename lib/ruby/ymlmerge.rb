@@ -25,17 +25,21 @@ class Hash
       |key,_old,_new|
         if _old.class == Hash then
           _old.rmerge(_new)
-        elsif _old.class == Array then
-          _old.map { |_oel| if _oel.class == Hash then _oel.rmerge(_new.find(-> {return {}}) { |_nel| _nel["name"]==_oel["name"] } ) else _oel end }
+        elsif _old.class == Array && _new.class == Array then
+          if _old.first.is_a?(Hash) then
+            _old.map { |_oel| _oel.rmerge(_new.find(-> {return {}}) { |_nel| _nel["name"]==_oel["name"] } ) }
+          else
+            _old
+          end
         else
-          _new
+          _old
         end
     }
   end
 end
 
 def ymlsmerge(ymlarr)
-  return ymlarr.count > 1 ? ymlsmerge(ymlarr.push(ymlarr.pop.rmerge(ymlarr.pop))) : YAML.dump(ymlarr.pop)
+  return ymlarr.count > 1 ? ymlsmerge(ymlarr.unshift(ymlarr.shift.rmerge(ymlarr.shift))) : YAML.dump(ymlarr.pop)
 end
 
 puts ymlsmerge(ARGV.map { |ymlfile| YAML.load(File.open(ymlfile)) })

@@ -33,6 +33,7 @@ yml_upsseq = user_provided_service_instances
 yml_sbkseq = service_brokers
 yml_sviseq = service_instances
 yml_svcseq = services
+yml_appdmn = apps_domain
 
 artifact_mfst = manifest.yml
 cfbindir = cfdir
@@ -235,7 +236,7 @@ $(sbkdir)/%/.sbkdeps: $(appstack_mfst) $(sbkdir)/%/$(sbklcl_mfst)
 	$(eval sbkdeps:=$(shell lib/ruby/envdeps.rb service_broker_names $(subst $(sbkdir)/,,$(@D)) $< $(appdir)))
 	$(shmute)echo "$(@D)/.sbk $@: $(sbkdeps) $^ | $(@D)/.sbkchanged" >$@
 
-$(appdir)/%/.appchanged: $(appdir)/%/$(apprmt_mfst) $(appdir)/%/$(applcl_mfst)
+$(appdir)/%/.appchanged: $(appdir)/%/$(applcl_mfst) $(appdir)/%/$(apprmt_mfst)
 	$(shmute)-lib/ruby/appmftcompare.rb $^ || touch $@
 
 $(svidir)/%/.svichanged: $(svidir)/%/$(svirmt_mfst) $(svidir)/%/$(svilcl_mfst)
@@ -291,12 +292,16 @@ $(svidir)/%/$(svilcl_mfst): $(appstack_mfst) $(svidir)/%/.dir
 	$(shmute)$(call r_ymlGetLstElemByNamedVal,$(yml_sviseq),name,$(subst $(svidir)/,,$(@D))) <$(appstack_mfst) >$@
 
 $(appdir)/%/$(apprmt_mfst): $(cfspace)_summary.yml $(appdir)/%/.dir
+	$(eval domain:=$(shell $(call r_ymlelemval,$(yml_appdmn)) <$(appstack_file)))
 	$(shmute)$(call r_ymlGetLstElemByNamedVal,$(yml_appseq),name,$(subst $(appdir)/,,$(@D))) <$< >$@
+	$(shmute)-lib/ruby/appmftunify.rb $@ $(domain) >$@.tmpl; mv $@.tmpl $@
 
 $(appdir)/%/$(applcl_mfst): $(appdir)/%/$(artifact_mfst) $(appstack_mfst)
 	$(info $(call i_appcrmf,$(subst $(appdir)/,,$(@D))))
 	$(shmute)$(call r_ymlGetLstElemByNamedVal,$(yml_appseq),name,$(subst $(appdir)/,,$(@D))) <$(appstack_mfst) >$@
 	$(shmute)lib/ruby/ymlmerge.rb $@ $< >$@.tmp1; mv $@.tmp1 $@
+	$(eval domain:=$(shell $(call r_ymlelemval,$(yml_appdmn)) <$(appstack_file)))
+	$(shmute)-lib/ruby/appmftunify.rb $@ $(domain) >$@.tmpl; mv $@.tmpl $@
 
 $(appdir)/%/$(artifact_mfst): $(srcdir)/%.zip $(appdir)/%/.dir
 	$(info $(call i_appunzp,$(subst $(appdir)/,,$(@D))))

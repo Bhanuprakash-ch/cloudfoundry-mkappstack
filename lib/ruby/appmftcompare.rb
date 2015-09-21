@@ -39,8 +39,8 @@ app2path = ARGV.shift || "app2.yml"
 def sanitize(yml, compare_keys)
   sane = yml
   if sane.class == Hash then
-    sane["hosts"] = yml.has_key?("host") ? yml["hosts"].push(yml["host"]).uniq : yml["hosts"]
-    sane["domains"] = yml.has_key?("domain") ? yml["domains"].push(yml["domain"]).uniq : yml["domains"]
+    sane["hosts"] = yml.has_key?("host") ? yml.fetch("hosts",[]).push(yml["host"]).uniq : yml.fetch("hosts",[])
+    sane["domains"] = yml.has_key?("domain") ? yml.fetch("domains",[]).push(yml["domain"]).uniq : yml.fetch("domains",[])
     sane = yml.select { |key,val| compare_keys.include?(key) }
     sane = sane.each { |key,val| sane[key] = val.sort if val.kind_of?(Array) }.sort.to_h
   end

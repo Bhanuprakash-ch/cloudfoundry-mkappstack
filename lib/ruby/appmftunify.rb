@@ -30,13 +30,6 @@ def unify(yml, domain)
   yml["disk_quota"] ||= "1024M"
   yml["memory"]     ||= "1024M"
 
-  if yml.has_key?("host") then
-    yml["hosts"] ||= []
-    yml["hosts"] = yml["hosts"].push(yml["host"]).uniq
-    yml.delete("host")
-  end
-  yml["hosts"] ||= [yml["name"]]
-
   if yml.has_key?("domain") then
     yml["domains"] ||= []
     yml["domains"] = yml["domains"].push(yml["domain"]).uniq

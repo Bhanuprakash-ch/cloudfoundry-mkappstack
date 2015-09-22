@@ -23,6 +23,9 @@ manifest = ARGV.shift || "app.yml"
 default_domain   = ARGV.shift
 
 def unify(yml, domain)
+  if yml == nil then
+    return nil
+  end
   yml["instances"]  ||= 1
   yml["disk_quota"] ||= "1024M"
   yml["memory"]     ||= "1024M"

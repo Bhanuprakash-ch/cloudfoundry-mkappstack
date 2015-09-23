@@ -22,6 +22,22 @@ require 'yaml'
 manifest = ARGV.shift || "app.yml"
 default_domain   = ARGV.shift
 
+def standardize_quota(quota)
+  quota = quota.upcase
+  if quota.include? "GB" then
+    integer = (quota.delete "GB").to_i * 1024
+    return integer.to_s + "M"
+  end
+  if quota.include? "G" then
+    integer = (quota.delete "G").to_i * 1024
+    return integer.to_s + "M"
+  end
+  if quota.include? "MB" then
+    return (quota.delete "MB") + "M"
+  end
+  return quota
+end
+
 def unify(yml, domain)
   if yml == nil then
     return nil
@@ -29,6 +45,9 @@ def unify(yml, domain)
   yml["instances"]  ||= 1
   yml["disk_quota"] ||= "1024M"
   yml["memory"]     ||= "1024M"
+
+  yml["memory"] = standardize_quota(yml["memory"])
+  yml["disk_quota"] = standardize_quota(yml["disk_quota"])
 
   if yml.has_key?("domain") then
     yml["domains"] ||= []

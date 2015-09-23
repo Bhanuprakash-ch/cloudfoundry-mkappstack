@@ -63,7 +63,7 @@ else
   cfarcurl = "$(cfbinurl)?release=$(cfbinrel)&version=$(cfbinver)"
 endif
 
-appstack_mfst := $(shell [ -f $(appstack_file) ] || lib/ruby/ymlmerge.rb $(stack_mflist) >$(appstack_file); echo $(appstack_file))
+appstack_mfst := $(shell [ -s $(appstack_file) ] || lib/ruby/ymlmerge.rb $(stack_mflist) >$(appstack_file); echo $(appstack_file))
 
 APPS := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app["name"]+" ") <$(appstack_mfst))
 DPLAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.app)

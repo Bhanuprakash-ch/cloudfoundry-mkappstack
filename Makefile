@@ -21,7 +21,7 @@ include lib/make/functions.mk
 include lib/make/cloudfoundry.mk
 
 clean:
-	rm -rf $(LOCALFILES) 
+	rm -rf $(LOCALFILES)
 
 cfclean: purge_services purge_applications purge_upsis purge_brokers
 
@@ -32,6 +32,8 @@ discover: $(cfspace)_summary.yml $(cfspace)_upsi.yml $(cfspace)_sbrokers.yml
 
 appstack deploy: deploy_applications deploy_services
 	$(shmute)rm -f $(CFOBJFILES)
+
+rebind-apps: rebind_applications
 
 artifact-pack: $(cfspace)_artifacts.tar.gz
 

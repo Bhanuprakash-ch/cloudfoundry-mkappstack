@@ -68,6 +68,7 @@ appstack_mfst := $(shell [ -s $(appstack_file) ] || lib/ruby/ymlmerge.rb $(stack
 APPS := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app["name"]+" ") <$(appstack_mfst))
 DPLAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.app)
 DELAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.appdel)
+REBINDAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.rebindapp)
 ARTFCTS := $(foreach app,$(APPS),$(srcdir)/$(app).zip)
 SVIS := $(shell $(call r_ymllistdo,$(yml_sviseq),|svi| print svi["name"]+" ") <$(appstack_mfst))
 DPLSVIS := $(foreach svi,$(SVIS),$(svidir)/$(svi)/.svi)
@@ -99,6 +100,8 @@ purge_upsis: $(DELUPSI)
 purge_brokers: $(DELSBKS)
 
 deploy_applications: $(DPLAPPS)
+
+rebind_applications: $(REBINDAPPS)
 
 deploy_service_instances: $(DPLSVIS)
 
@@ -147,6 +150,19 @@ $(appdir)/%/.appdel: $(appdir)/%/.dir | cfset
 	$(eval app_missing:=$(shell $(cfcall) app $(app_name) $(devnull); echo $$?))
 	$(shmute)if [ "$(app_missing)" == "0" ]; then echo "$(call i_appdele,$(app_name))"; fi
 	$(shmute)if [ "$(app_missing)" == "0" ]; then $(cfcall) delete -f $(app_name) $(nulout); fi
+
+$(appdir)/%/.rebindapp:
+	$(eval app_name:=$(subst $(appdir)/,,$(@D)))
+	$(eval app_services:=$(shell $(call r_ymllistelemval,$(yml_appseq),|app| app["name"]=="$(app_name)",["services"]) <$(@D)/$(applcl_mfst)))
+	$(shmute)if [ -f $| ]; then for bsvc in $(app_services); do \
+          echo "rebind application: $(app_name) (service: $${bsvc})"; \
+          $(cfcall) unbind-service $(app_name) $${bsvc} $(nulout); \
+          $(cfcall) bind-service $(app_name) $${bsvc} $(nulout); \
+        done; fi
+	@echo "$(call i_apprstg) $(app_name)";
+	$(cfcall) restage $(app_name) $(nulout);
+	$(shmute)rm -f $|
+	$(shmute)touch $@
 
 $(svidir)/%/.svi:
 	$(eval svi_name:=$(subst $(svidir)/,,$(@D)))

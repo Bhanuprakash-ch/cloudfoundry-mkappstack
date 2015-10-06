@@ -140,6 +140,11 @@ $(appdir)/%/.app:
 	$(eval app_name:=$(subst $(appdir)/,,$(@D)))
 	$(eval app_path:=$(shell $(call r_ymllistelemval,$(yml_appseq),|app| app["name"]=="$(app_name)",["path"]) <$(@D)/$(applcl_mfst)))
 	$(eval app_dead:=$(shell $(cfcall) app $(app_name) | grep -q "\ running\ "; echo $$?))
+	$(eval app_services:=$(shell $(call r_ymllistelemval,$(yml_appseq),|app| app["name"]=="$(app_name)",["services"]) <$(@D)/$(apprmt_mfst)))
+	$(shmute)if [ -f $| ]; then for bsvc in $(app_services); do \
+          echo "unbinding application: $(app_name) (service: $${bsvc})"; \
+          $(cfcall) unbind-service $(app_name) $${bsvc} $(nulout); \
+        done; fi
 	$(shmute)if [ -f $| -o "$(app_dead)" != "0" ]; then echo "$(call i_apppush,$(app_name))"; fi
 	$(shmute)if [ -f $| -o "$(app_dead)" != "0" ]; then $(cfcall) push -p $(@D)/$(app_path) -f $(@D)/$(applcl_mfst) $(nulout); fi
 	$(shmute)rm -f $|

@@ -127,7 +127,7 @@ $(cfcmd): $(cfbinary)
 	$(shmute)ln -fs $(<F) $@
 
 cfauth: $(cfcmd)
-	$(shmute)lib/sh/cfset "$(cfcall)" "$(cfapi)" "$(cfuser)" "$(cfpass)" "$(cforg)" "$(cfspace)"$(nulout)
+	$(shmute)lib/sh/cfset "$(cfcall)" "$(strip $(cfapi))" "$(strip $(cfuser))" "$(strip $(cfpass))" "$(strip $(cforg))" "$(strip $(cfspace))"$(nulout)
 
 cfset: $(cfcmd) cfauth
 	$(eval space_guid:=$(shell $(cfcall) space --guid $(cfspace)))

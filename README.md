@@ -63,19 +63,40 @@ available make targets:
 * cfclean - wipe most of CF self-created objects (according to manifests)
 * wipeall - cfclean + clean
 
-License
+Platform Deployment
 =======
-Copyright (c) 2015 Intel Corporation
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+If you're following instructions from  [Platform Deployment Procedure: bosh deployment](https://github.com/trustedanalytics/platform-wiki/wiki/Platform-Deployment-Procedure:-bosh-deployment) take the  actions described below.
 
-    http://www.apache.org/licenses/LICENSE-2.0
+From this point there are two paths you can follow to deploy TAP. The path you will choose depends on the way how you obtained artifacts package.
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+**Solution 1** - Zip artifacts obtained from TAP team or prepared by building all components from sources.
 
+* Copy templates to new files `appstack.mk` and `secret.mk`:
+```
+cp appstack.mk.tmpl appstack.mk
+cp secret.mk.tmpl secret.mk
+```
+* Enter your environment information to `secret.mk`. Edit cloudfoundry api endpoint, user, password, org & space.
+* Set path to the artifacts.
+* Open `appstack.mk` file and set artifact_pfx: `artifact_pfx = file://<artifacts_directory>`.
+
+_Note: if your artifacts are stored in `/tmp/PACKAGES` directory, your artifact_pfx should be set to: `artifact_pfx = file:///tmp/PACKAGES` (remember about "file://" prefix!)_
+
+Fields afcturl and stack_mflist depend on whether your zipped artifact file names contain versions or not.
+Please, check the names format of zipped artifacts in artifacts directory.
+
+**If they do contain versions** and are in the following format: `<appname>-<version>.zip` (for example: `app-launcher-helper-0.4.5.zip`) take the following steps:
+  * in appstack.mk set the following afcturl: `afcturl = $(artifact_pfx)/$(appname)-$(appver).zip`
+  * in appstack.mk set the following stack_mflist: `stack_mflist = versions.yml settings.yml appstack.yml`
+
+**If they do not contain versions** and are in the following format: `<appname>.zip` (For example: `app-launcher-helper.zip`)
+  * in appstack.mk set following afcturl: `afcturl = $(artifact_pfx)/$(appname).zip`
+  * in appstack.mk set the following stack_mflist: `stack_mflist = settings.yml appstack.yml`
+
+
+**Solution 2** - Zip artifacts obtained from artifacts repository (internal or public)
+
+**_Note: This solution is under development and is not available yet_**
+
+Continue with [Platform Deployment Procedure: bosh deployment](https://github.com/trustedanalytics/platform-wiki/wiki/Platform-Deployment-Procedure:-bosh-deployment)

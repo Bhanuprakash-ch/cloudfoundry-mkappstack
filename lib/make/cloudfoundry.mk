@@ -147,6 +147,13 @@ $(appdir)/%/.app:
         done; fi
 	$(shmute)if [ -f $| -o "$(app_dead)" != "0" ]; then echo "$(call i_apppush,$(app_name))"; fi
 	$(shmute)if [ -f $| -o "$(app_dead)" != "0" ]; then $(cfcall) push -p $(@D)/$(app_path) -f $(@D)/$(applcl_mfst) $(nulout); fi
+	$(eval domain:=$(shell $(call r_ymlelemval,$(yml_appdmn)) <$(appstack_file)))
+	$(eval app_name:=$(subst $(appdir)/,,$(@D)))
+	$(eval desc:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("description","")) <$(@D)/$(applcl_mfst)))
+	$(eval register_in:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("register_in","")) <$(@D)/$(applcl_mfst)))
+	$(eval auth_username:=$(shell $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_USER","")) <$(appdir)/$(register_in)/$(applcl_mfst)))
+	$(eval auth_password:=$(shell $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_PASS","")) <$(appdir)/$(register_in)/$(applcl_mfst)))
+	$(shmute)if [ ! -z "$(register_in)" ]; then $(appdir)/$(register_in)/register.sh "http://$(register_in).$(domain)" "$(auth_username)" "$(auth_password)" "$(app_name)" "$(app_name)" "$(desc)"; fi
 	$(shmute)rm -f $|
 	$(shmute)touch $@
 
@@ -238,7 +245,7 @@ $(sbkdir)/%/.sbkdel: $(sbkdir)/%/.dir | cfset
 	$(shmute)$(cfcall) delete-service-broker $(sbk_name) -f $(nulout)
 
 $(appdir)/%/.appdeps: $(appdir)/%/$(applcl_mfst)
-	$(eval appdeps:=$(shell lib/ruby/appdeps.rb $< $(appstack_mfst) $(svidir) $(upsdir)))
+	$(eval appdeps:=$(shell lib/ruby/appdeps.rb $< $(appstack_mfst) $(svidir) $(upsdir) $(appdir)))
 	$(shmute)echo "$(@D)/.app $@: $(appdeps) $^ | $(@D)/.appchanged" >$@
 
 $(svidir)/%/.svideps: $(svidir)/%/$(svilcl_mfst)

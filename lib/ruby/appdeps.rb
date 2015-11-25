@@ -14,12 +14,13 @@
 # limitations under the License.
 #
 
-# usage appdeps.rb app_manifest.yml appstack_manifest.yml svidir upsdir
+# usage appdeps.rb app_manifest.yml appstack_manifest.yml svidir upsdir appdir
 
 require 'yaml'
 
-def getAppDepByDepname(depname, appstack_obj, svidir, upsdir)
+def getAppDepByDepname(depname, appstack_obj, svidir, upsdir, appdir)
 
+  manifest_apps_list = "applications"
   manifest_svci_list = "service_instances"
   manifest_upsi_list = "user_provided_service_instances"
 
@@ -27,6 +28,8 @@ def getAppDepByDepname(depname, appstack_obj, svidir, upsdir)
     dep = svidir + "/" + depname + "/.svi"
   elsif appstack_obj[manifest_upsi_list].any? { |upsi| upsi["name"] == depname }
     dep = upsdir + "/" + depname + "/.ups"
+  elsif appstack_obj[manifest_apps_list].any? { |app| app["name"] == depname }
+    dep = appdir + "/" + depname + "/.app"
   else
     dep = nil
   end
@@ -38,6 +41,7 @@ appmanifest = ARGV.shift
 appstackmanifest = ARGV.shift
 svidir = ARGV.shift
 upsdir = ARGV.shift
+appdir = ARGV.shift
 
 manifest_app_list = "applications"
 manifest_sbk_list = "service_brokers"
@@ -48,7 +52,11 @@ appstack_obj = YAML::load(File.open(appstackmanifest))
 deps = Array.new
 
 if app_obj[manifest_app_list][0].include?("services") and app_obj[manifest_app_list][0]["services"].kind_of?(Array)
-  app_obj[manifest_app_list][0]["services"].each {|svcname| deps.push(getAppDepByDepname(svcname, appstack_obj, svidir, upsdir))}
+  app_obj[manifest_app_list][0]["services"].each {|svcname| deps.push(getAppDepByDepname(svcname, appstack_obj, svidir, upsdir, appdir))}
+end
+if app_obj[manifest_app_list][0].include?("env") and app_obj[manifest_app_list][0]["env"].include?("register_in")
+  depname = app_obj[manifest_app_list][0]["env"]["register_in"]
+  deps.push(getAppDepByDepname(depname, appstack_obj, svidir, upsdir, appdir))
 end
 
 puts deps * " "

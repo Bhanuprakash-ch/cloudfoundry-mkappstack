@@ -145,8 +145,9 @@ $(appdir)/%/.app:
           echo "unbinding application: $(app_name) (service: $${bsvc})"; \
           $(cfcall) unbind-service $(app_name) $${bsvc} $(nulout); \
         done; fi
+	$(eval push_arg:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("push_argument","")) <$(@D)/$(applcl_mfst)))
 	$(shmute)if [ -f $| -o "$(app_dead)" != "0" ]; then echo "$(call i_apppush,$(app_name))"; fi
-	$(shmute)if [ -f $| -o "$(app_dead)" != "0" ]; then $(cfcall) push -p $(@D)/$(app_path) -f $(@D)/$(applcl_mfst) $(nulout); fi
+	$(shmute)if [ -f $| -o "$(app_dead)" != "0" ]; then $(cfcall) push -p $(@D)/$(app_path) -f $(@D)/$(applcl_mfst) $(push_arg) $(nulout); fi
 	$(eval domain:=$(shell $(call r_ymlelemval,$(yml_appdmn)) <$(appstack_file)))
 	$(eval app_name:=$(subst $(appdir)/,,$(@D)))
 	$(eval desc:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("description","")) <$(@D)/$(applcl_mfst)))

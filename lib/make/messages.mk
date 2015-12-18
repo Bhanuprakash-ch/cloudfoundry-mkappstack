@@ -38,4 +38,6 @@ i_svidele = [$(stackpfx)] xxxxxx[svi] delete service-instance: $(1)
 i_upscrte = [$(stackpfx)] -»-»-»[ups] create user-provided-service: $(1)
 i_upsupdt = [$(stackpfx)] --»«--[ups] update user-provided-service: $(1)
 i_upsdele = [$(stackpfx)] xxxxxx[ups] delete user-provided-service: $(1)
-
+i_bpkcrte = [$(stackpfx)] -»-»-»[bpk] create buildpack: $(1)
+i_bpkupdt = [$(stackpfx)] --»«--[bpk] update buildpack: $(1)
+i_bpknchg = [$(stackpfx)] ======[bpk] up to date: $(1)

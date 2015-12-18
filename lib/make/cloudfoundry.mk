@@ -28,6 +28,7 @@ sbkrmt_mfst = sbkrmt_mfst.yml
 upslcl_mfst = upslcl_mfst.yml
 upsrmt_mfst = upsrmt_mfst.yml
 
+yml_bpkseq = buildpacks
 yml_appseq = applications
 yml_upsseq = user_provided_service_instances
 yml_sbkseq = service_brokers
@@ -66,6 +67,8 @@ endif
 
 appstack_mfst := $(shell [ -s $(appstack_file) ] || lib/ruby/ymlmerge.rb $(stack_mflist) >$(appstack_file); echo $(appstack_file))
 
+BPKS := $(shell $(call r_ymllistdo,$(yml_bpkseq),|bpk| print bpk["name"]+" ") <$(appstack_mfst))
+DPLBPKS := $(foreach bpk,$(BPKS),$(appdir)/$(bpk)/.bpk)
 APPS := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app["name"]+" ") <$(appstack_mfst))
 APPS_ARTF_NAME := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app["env"].key?("artifact_name") ? (app["env"]["artifact_name"]+"-"+app["env"]["VERSION"]+" ") : (app["name"]+"-"+app["env"]["VERSION"]+" ")) <$(appstack_mfst))
 
@@ -101,6 +104,8 @@ purge_services: $(DELSVCS)
 purge_upsis: $(DELUPSI)
 
 purge_brokers: $(DELSBKS)
+
+deploy_buildpacks: $(DPLBPKS)
 
 deploy_applications: $(DPLAPPS)
 
@@ -140,6 +145,19 @@ cfset: $(cfcmd) cfauth
 $(appstack_mfst): $(stack_mflist)
 	$(shmute)lib/ruby/ymlmerge.rb $^ >$@
 
+$(appdir)/%/.bpk:
+	$(eval bpk_name:=$(subst $(appdir)/,,$(@D)))
+	$(eval bpk_exist:=$(shell $(cfcall) update-buildpack $(bpk_name) $(devnull); echo $$?))
+	$(eval bpk_ver:=$(shell $(call r_ymllistelemval,$(yml_bpkseq),|bpk| bpk["name"]=="$(bpk_name)",["VERSION"]) <$(appstack_mfst)))
+	$(eval bpk_file:=$(shell echo $(bpk_name)-v$(bpk_ver).zip))
+	$(eval bpk_file_loc:=$(shell echo $(appdir)/$(bpk_name)/$(bpk_file)))
+	$(eval bpk_ver_check:=$(shell if [ "$(bpk_exist)" == "0" ]; then $(cfcall) buildpacks | grep "$(bpk_name) " | grep -q " $(bpk_file)"; echo $$?; fi))
+	$(shmute)if [ "$(bpk_exist)" == "1" -a -f "$(bpk_file_loc)" ]; then echo "$(call i_bpkcrte,$(bpk_name))"; \
+					elif [ "$(bpk_exist)" == "0" -a -f "$(bpk_file_loc)" ] && [ "$(bpk_ver_check)" == "1" ]; then echo "$(call i_bpkupdt,$(bpk_name))"; \
+					else echo "$(call i_bpknchg,$(bpk_name))"; fi
+	$(shmute)if [ "$(bpk_exist)" == "1" -a -f "$(bpk_file_loc)" ]; then $(cfcall) create-buildpack $(bpk_name) $(bpk_file_loc) 1 --enable $(nulout); fi
+	$(shmute)if [ "$(bpk_exist)" == "0" -a -f "$(bpk_file_loc)" ] && [ "$(bpk_ver_check)" == "1" ]; then $(cfcall) update-buildpack $(bpk_name) -p $(bpk_file_loc) --enable $(nulout); fi
+	
 $(appdir)/%/.app:
 	$(eval app_name:=$(subst $(appdir)/,,$(@D)))
 	$(eval app_path:=$(shell $(call r_ymllistelemval,$(yml_appseq),|app| app["name"]=="$(app_name)",["path"]) <$(@D)/$(applcl_mfst)))

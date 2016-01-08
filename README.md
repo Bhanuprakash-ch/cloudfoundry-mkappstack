@@ -1,5 +1,5 @@
 # cloudfoundry-mkappstack
-simple automation to create a CF multi application stack
+Simple automation to create a CF multi application stack.
 
 Description
 ===========
@@ -66,20 +66,19 @@ available make targets:
 Platform Deployment
 =======
 
-If you're following instructions from  [Platform Deployment Procedure: bosh deployment](https://github.com/trustedanalytics/platform-wiki/wiki/Platform-Deployment-Procedure:-bosh-deployment) take the  actions described below.
-
-From this point there are two paths you can follow to deploy TAP. The path you will choose depends on the way how you obtained artifacts package.
-
-**Solution 1** - Zip artifacts obtained from TAP team or prepared by building all components from sources.
-
 * Copy templates to new files `appstack.mk` and `secret.mk`:
 ```
 cp appstack.mk.tmpl appstack.mk
 cp secret.mk.tmpl secret.mk
 ```
 * Enter your environment information to `secret.mk`. Edit cloudfoundry api endpoint, user, password, org & space.
-* Set path to the artifacts.
-* Open `appstack.mk` file and set artifact_pfx: `artifact_pfx = file://<artifacts_directory>`.
+
+From this point there are two paths you can follow to deploy TAP.
+
+### Solution 1
+Do this when you have TAP zip artifacts. If you don't know what that means, check [apps deployment wiki page](https://github.com/trustedanalytics/platform-wiki/wiki/Platform-application-layer-deployment).
+
+* Open `appstack.mk` file and set artifact_pfx (path to the directory with individual application archives): `artifact_pfx = file://<artifacts_directory>`.
 
 _Note: if your artifacts are stored in `/tmp/PACKAGES` directory, your artifact_pfx should be set to: `artifact_pfx = file:///tmp/PACKAGES` (remember about "file://" prefix!)_
 
@@ -94,9 +93,16 @@ Please, check the names format of zipped artifacts in artifacts directory.
   * in appstack.mk set following afcturl: `afcturl = $(artifact_pfx)/$(appname).zip`
   * in appstack.mk set the following stack_mflist: `stack_mflist = settings.yml appstack.yml`
 
+### Solution 2
+Do this when you have access to the artifacts' repository.
 
-**Solution 2** - Zip artifacts obtained from artifacts repository (internal or public)
+Open `appstack.mk`. For example, if you're using Nexus and you want the latest application versions, you can set `afcturl` to `https://nexus.example.com/service/local/artifact/maven/redirect?r=releases\&a=$(appname)\&v=RELEASE\&g=org.trustedanalytics\&p=zip#`
 
-**_Note: This solution is under development and is not available yet_**
+But you can tweak other variables like `artifact_pfx` to create the proper artifact URI.
 
-Continue with [Platform Deployment Procedure: bosh deployment](https://github.com/trustedanalytics/platform-wiki/wiki/Platform-Deployment-Procedure:-bosh-deployment)
+### Next steps
+Remember that you can tweak the configuration in *.mk files to fit your own needs not taken into account in the solutions above.
+
+Continue with the app deployment wiki page.
+
+

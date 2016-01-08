@@ -24,8 +24,9 @@ svcdir = svcs
 sbkdir = sbks
 upsdir = upsi
 srcdir = artifacts
-
-LOCALFILES = $(appdir) $(svidir) $(svcdir) $(sbkdir) $(upsdir) $(srcdir)
+artifactspack = $(cfspace)_artifacts.tar.gz
+ 
+LOCALFILES = $(appdir) $(svidir) $(svcdir) $(sbkdir) $(upsdir) $(srcdir) $(artifactspack)
 
 .PRECIOUS: $(srcdir)/%.zip
 

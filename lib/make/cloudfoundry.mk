@@ -67,6 +67,8 @@ endif
 appstack_mfst := $(shell [ -s $(appstack_file) ] || lib/ruby/ymlmerge.rb $(stack_mflist) >$(appstack_file); echo $(appstack_file))
 
 APPS := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app["name"]+" ") <$(appstack_mfst))
+APPS_ARTF_NAME := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app["env"].key?("artifact_name") ? (app["env"]["artifact_name"]+"-"+app["env"]["VERSION"]+" ") : (app["name"]+"-"+app["env"]["VERSION"]+" ")) <$(appstack_mfst))
+
 DPLAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.app)
 DELAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.appdel)
 REBINDAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.rebindapp)
@@ -112,8 +114,9 @@ deploy_services: $(DPLSVCS)
 
 deploy_service_brokers: $(DPLSBKS)
 
-$(cfspace)_artifacts.tar.gz: $(ARTFCTS)
-	$(shmute)tar -czf $@ $^
+$(artifactspack): $(ARTFCTS)
+	$(info $(APPS_ARTF_NAME))
+	$(shmute)tar -czhf $@ $(foreach app,$(APPS_ARTF_NAME),$(srcdir)/$(app).zip )
 
 $(cfarchive): | $(cfbindir)/.dir
 	$(info $(call i_cfdwnld))
@@ -350,4 +353,4 @@ $(srcdir)/%.zip: $(srcdir)/.dir
 	$(eval appver:=$(if $(mftappver),$(mftappver),$(artifact_ver)))
 	$(eval srcurl:=$(if $(mftsrcurl),$(mftsrcurl),$(afcturl)))
 	$(shmute)$(curl) -o $@ $(srcurl) $(nulout); if [ "`echo $$?`" != "0" ]; then echo "$(call i_appdler,$(appnamereal))"; fi
-
+	$(shmute)ln -snf $(appnamereal).zip $(srcdir)/$(appname)-$(appver).zip

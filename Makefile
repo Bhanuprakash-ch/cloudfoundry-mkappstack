@@ -30,7 +30,7 @@ wipeall: cfclean clean
 discover: $(cfspace)_summary.yml $(cfspace)_upsi.yml $(cfspace)_sbrokers.yml
 	$(shmute)lib/ruby/ymlmerge.rb $^ >$@.yml
 
-appstack deploy: deploy_applications deploy_services
+appstack deploy: deploy_buildpacks deploy_applications deploy_services
 	$(shmute)rm -f $(CFOBJFILES)
 
 rebind-apps: rebind_applications

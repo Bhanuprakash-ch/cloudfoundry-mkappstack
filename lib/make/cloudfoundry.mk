@@ -70,7 +70,7 @@ appstack_mfst := $(shell [ -s $(appstack_file) ] || lib/ruby/ymlmerge.rb $(stack
 BPKS := $(shell $(call r_ymllistdo,$(yml_bpkseq),|bpk| print bpk["name"]+" ") <$(appstack_mfst))
 DPLBPKS := $(foreach bpk,$(BPKS),$(appdir)/$(bpk)/.bpk)
 APPS := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app["name"]+" ") <$(appstack_mfst))
-APPS_ARTF_NAME := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app["env"].key?("artifact_name") ? (app["env"]["artifact_name"]+"-"+app["env"]["VERSION"]+" ") : (app["name"]+"-"+app["env"]["VERSION"]+" ")) <$(appstack_mfst))
+APPS_ARTF_NAME := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app["env"].key?("artifact_name") ? (app["env"]["artifact_name"]+"-"+app["env"]["VERSION"].to_s+" ") : (app["name"]+"-"+app["env"]["VERSION"].to_s+" ")) <$(appstack_mfst))
 
 DPLAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.app)
 DELAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.appdel)
@@ -120,7 +120,6 @@ deploy_services: $(DPLSVCS)
 deploy_service_brokers: $(DPLSBKS)
 
 $(artifactspack): $(ARTFCTS)
-	$(info $(APPS_ARTF_NAME))
 	$(shmute)tar -czhf $@ $(foreach app,$(APPS_ARTF_NAME),$(srcdir)/$(app).zip )
 
 $(cfarchive): | $(cfbindir)/.dir

@@ -141,6 +141,9 @@ cfset: $(cfcmd) cfauth
 	$(eval space_guid:=$(shell $(cfcall) space --guid $(cfspace)))
 	$(shmute)echo $(call i_cflogin,User:$(cfuser) API:$(cfapi) Org:$(cforg) Space:$(cfspace) Space GUID:$(space_guid))
 
+fsclean:
+	$(shmute)rm -f $(appdir)/*/.appchanged $(appdir)/*/$(apprmt_mfst) $(cfspace)_*.json $(cfspace)_*.yml $(nulout)
+
 $(appstack_mfst): $(stack_mflist)
 	$(shmute)lib/ruby/ymlmerge.rb $^ >$@
 
@@ -174,9 +177,9 @@ $(appdir)/%/.app:
 	$(eval desc:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("description","")) <$(@D)/$(applcl_mfst)))
 	$(eval disp_name:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("display_name","")) <$(@D)/$(applcl_mfst)))
 	$(eval image_url:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("image_url","")) <$(@D)/$(applcl_mfst)))
-	$(eval register_in:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("register_in","")) <$(@D)/$(applcl_mfst)))
-	$(eval auth_username:=$(shell $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_USER","")) <$(appdir)/$(register_in)/$(applcl_mfst)))
-	$(eval auth_password:=$(shell $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_PASS","")) <$(appdir)/$(register_in)/$(applcl_mfst)))
+#	$(eval register_in:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("register_in","")) <$(@D)/$(applcl_mfst)))
+#	$(eval auth_username:=$(shell $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_USER","")) <$(appdir)/$(register_in)/$(applcl_mfst)))
+#	$(eval auth_password:=$(shell $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_PASS","")) <$(appdir)/$(register_in)/$(applcl_mfst)))
 	$(shmute)if [ ! -z "$(register_in)" ]; then $(appdir)/$(register_in)/register.sh -b "http://$(register_in).$(domain)" -u "$(auth_username)" -p "$(auth_password)" -a "$(app_name)" -n "$(app_name)" -s "$(disp_name)" -d "$(desc)" -i "$(image_url)"; fi
 	$(shmute)rm -f $|
 	$(shmute)touch $@

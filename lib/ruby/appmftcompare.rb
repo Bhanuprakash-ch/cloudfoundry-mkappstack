@@ -29,8 +29,8 @@ compare_keys = [
   "hosts",
   "instances",
   "memory",
-  "services",
-  "timeout"
+  "services"
+#  "timeout"
 ]
 
 app1path = ARGV.shift || "app1.yml"

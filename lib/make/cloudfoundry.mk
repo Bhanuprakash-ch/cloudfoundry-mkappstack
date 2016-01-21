@@ -178,17 +178,21 @@ $(appdir)/%/.app:
 	$(eval disp_name:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("display_name","")) <$(@D)/$(applcl_mfst)))
 	$(eval image_url:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("image_url","")) <$(@D)/$(applcl_mfst)))
 	$(eval register_in:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("register_in","")) <$(@D)/$(applcl_mfst)))
-	$(eval auth_username:=$(shell $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_USER","")) <$(appdir)/$(register_in)/$(applcl_mfst)))
-	$(eval auth_password:=$(shell $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_PASS","")) <$(appdir)/$(register_in)/$(applcl_mfst)))
-	$(shmute)if [ ! -z "$(register_in)" ]; then $(appdir)/$(register_in)/register.sh -b "http://$(register_in).$(domain)" -u "$(auth_username)" -p "$(auth_password)" -a "$(app_name)" -n "$(app_name)" -s "$(disp_name)" -d "$(desc)" -i "$(image_url)"; fi
+	$(shmute)if [ ! -z "$(register_in)" ]; then \
+		  auth_username=`cat $(appdir)/$(register_in)/$(applcl_mfst) | $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_USER",""))`; \
+          auth_password=`cat $(appdir)/$(register_in)/$(applcl_mfst) | $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_PASS",""))`; \
+	      $(appdir)/$(register_in)/register.sh -b "http://$(register_in).$(domain)" -u "$$auth_username" -p "$$auth_password" -a "$(app_name)" -n "$(app_name)" -s "$(disp_name)" -d "$(desc)" -i "$(image_url)"; \
+	fi; \
 	$(shmute)rm -f $|
 	$(shmute)touch $@
 
-$(appdir)/%/.appdel: $(appdir)/%/.dir | cfset
+$(appdir)/%/.appdel: $(appdir)/%/.dir $(appdir)/%/$(applcl_mfst) | cfset
 	$(eval app_name:=$(subst $(appdir)/,,$(@D)))
 	$(eval app_missing:=$(shell $(cfcall) app $(app_name) $(devnull); echo $$?))
 	$(shmute)if [ "$(app_missing)" == "0" ]; then echo "$(call i_appdele,$(app_name))"; fi
 	$(shmute)if [ "$(app_missing)" == "0" ]; then $(cfcall) delete -f $(app_name) $(nulout); fi
+	$(eval register_in:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("register_in","")) <$(@D)/$(applcl_mfst)))
+	$(shmute)if [ ! -z "$(register_in)" ]; then $(cfcall) purge-service-offering -f $(app_name); fi
 
 $(appdir)/%/.rebindapp:
 	$(eval app_name:=$(subst $(appdir)/,,$(@D)))

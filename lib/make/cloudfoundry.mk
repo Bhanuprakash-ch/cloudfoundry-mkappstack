@@ -67,25 +67,25 @@ endif
 
 appstack_mfst := $(shell [ -s $(appstack_file) ] || lib/ruby/ymlmerge.rb $(stack_mflist) >$(appstack_file); echo $(appstack_file))
 
-BPKS := $(shell $(call r_ymllistdo,$(yml_bpkseq),|bpk| print bpk["name"]+" ") <$(appstack_mfst))
+BPKS := $(shell $(call r_ymllistdo,$(yml_bpkseq),|bpk| print bpk.fetch("name","")+" ") <$(appstack_mfst))
 DPLBPKS := $(foreach bpk,$(BPKS),$(appdir)/$(bpk)/.bpk)
-APPS := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app["name"]+" ") <$(appstack_mfst))
+APPS := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app.fetch("name","")+" ") <$(appstack_mfst))
 APPS_ARTF_NAME := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app["env"].key?("artifact_name") ? (app["env"]["artifact_name"]+"-"+app["env"]["VERSION"].to_s+" ") : (app["name"]+"-"+app["env"]["VERSION"].to_s+" ")) <$(appstack_mfst))
 
 DPLAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.app)
 DELAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.appdel)
 REBINDAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.rebindapp)
 ARTFCTS := $(foreach app,$(APPS),$(srcdir)/$(app).zip)
-SVIS := $(shell $(call r_ymllistdo,$(yml_sviseq),|svi| print svi["name"]+" ") <$(appstack_mfst))
+SVIS := $(shell $(call r_ymllistdo,$(yml_sviseq),|svi| print svi.fetch("name","")+" ") <$(appstack_mfst))
 DPLSVIS := $(foreach svi,$(SVIS),$(svidir)/$(svi)/.svi)
 DELSVIS := $(foreach svi,$(SVIS),$(svidir)/$(svi)/.svidel)
-UPSI := $(shell $(call r_ymllistdo,$(yml_upsseq),|ups| print ups["name"]+" ") <$(appstack_mfst))
+UPSI := $(shell $(call r_ymllistdo,$(yml_upsseq),|ups| print ups.fetch("name","")+" ") <$(appstack_mfst))
 DPLUPSI := $(foreach ups,$(UPSI),$(upsdir)/$(ups)/.ups)
 DELUPSI := $(foreach ups,$(UPSI),$(upsdir)/$(ups)/.upsdel)
 SVCS := $(sort $(shell $(call r_ymllistdo,$(yml_sviseq),|svc| print svc["service_plan"]["service"]["label"]+" ") <$(appstack_mfst)))
 DPLSVCS := $(foreach svc,$(SVCS),$(svcdir)/$(svc)/.svc)
 DELSVCS := $(foreach svc,$(SVCS),$(svcdir)/$(svc)/.svcdel)
-SBKS := $(shell $(call r_ymllistdo,$(yml_sbkseq),|sbk| print sbk["name"]+" ") <$(appstack_mfst))
+SBKS := $(shell $(call r_ymllistdo,$(yml_sbkseq),|sbk| print sbk.fetch("name","")+" ") <$(appstack_mfst))
 DPLSBKS := $(foreach sbk,$(SBKS),$(sbkdir)/$(sbk)/.sbk)
 DELSBKS := $(foreach sbk,$(SBKS),$(sbkdir)/$(sbk)/.sbkdel)
 
@@ -177,9 +177,9 @@ $(appdir)/%/.app:
 	$(eval desc:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("description","")) <$(@D)/$(applcl_mfst)))
 	$(eval disp_name:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("display_name","")) <$(@D)/$(applcl_mfst)))
 	$(eval image_url:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("image_url","")) <$(@D)/$(applcl_mfst)))
-#	$(eval register_in:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("register_in","")) <$(@D)/$(applcl_mfst)))
-#	$(eval auth_username:=$(shell $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_USER","")) <$(appdir)/$(register_in)/$(applcl_mfst)))
-#	$(eval auth_password:=$(shell $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_PASS","")) <$(appdir)/$(register_in)/$(applcl_mfst)))
+	$(eval register_in:=$(shell $(call r_appgetattr,$(app_name),.fetch("env",{}).fetch("register_in","")) <$(@D)/$(applcl_mfst)))
+	$(eval auth_username:=$(shell $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_USER","")) <$(appdir)/$(register_in)/$(applcl_mfst)))
+	$(eval auth_password:=$(shell $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_PASS","")) <$(appdir)/$(register_in)/$(applcl_mfst)))
 	$(shmute)if [ ! -z "$(register_in)" ]; then $(appdir)/$(register_in)/register.sh -b "http://$(register_in).$(domain)" -u "$(auth_username)" -p "$(auth_password)" -a "$(app_name)" -n "$(app_name)" -s "$(disp_name)" -d "$(desc)" -i "$(image_url)"; fi
 	$(shmute)rm -f $|
 	$(shmute)touch $@
@@ -372,5 +372,5 @@ $(srcdir)/%.zip: $(srcdir)/.dir
 	$(eval appname:=$(if $(mftafname),$(mftafname),$(appnamereal)))
 	$(eval appver:=$(if $(mftappver),$(mftappver),$(artifact_ver)))
 	$(eval srcurl:=$(if $(mftsrcurl),$(mftsrcurl),$(afcturl)))
-	$(shmute)$(curl) -o $@ $(srcurl) $(nulout); if [ "`echo $$?`" != "0" ]; then echo "$(call i_appdler,$(appnamereal))"; fi
+	$(shmute)$(curl) -o $@ "$(srcurl)" $(nulout); if [ "`echo $$?`" != "0" ]; then echo "$(call i_appdler,$(appnamereal))"; fi
 	$(shmute)ln -snf $(appnamereal).zip $(srcdir)/$(appname)-$(appver).zip

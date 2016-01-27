@@ -24,11 +24,11 @@ def getAppDepByDepname(depname, appstack_obj, svidir, upsdir, appdir)
   manifest_svci_list = "service_instances"
   manifest_upsi_list = "user_provided_service_instances"
 
-  if appstack_obj[manifest_svci_list].any? { |svci| svci["name"] == depname }
+  if appstack_obj.fetch(manifest_svci_list,[]).any? { |svci| svci["name"] == depname }
     dep = svidir + "/" + depname + "/.svi"
-  elsif appstack_obj[manifest_upsi_list].any? { |upsi| upsi["name"] == depname }
+  elsif appstack_obj.fetch(manifest_upsi_list,[]).any? { |upsi| upsi["name"] == depname }
     dep = upsdir + "/" + depname + "/.ups"
-  elsif appstack_obj[manifest_apps_list].any? { |app| app["name"] == depname }
+  elsif appstack_obj.fetch(manifest_apps_list,[]).any? { |app| app["name"] == depname }
     dep = appdir + "/" + depname + "/.app"
   else
     dep = nil

@@ -29,6 +29,11 @@ stack_mflist = settings.yml appstack.yml
 # an identifier used to mark terminal messages with meaningful label
 stackpfx = mystack_
 
+# prefix location where artifacts are stored
+artifacts_local_pfx = artifacts
+# prefix location where buildpacks are stored
+buildpacks_local_pfx = buildpacks
+
 # used to construct common artifact URL scheme (see afcturl below)
 artifact_pfx = https://my.artifact.store.org/common/path/to/artifacts
 
@@ -40,15 +45,16 @@ artifact_ver = latest
 # it is less important than an app env::artifact_srcurl value
 # $(appname) takes value of env::artifact_name if it exists, or application name declared in YAML manifest
 # $(appname) takes value of env::VERSION if it exists, or $(artifact_ver)
+# $(local_pfx) takes value of artifacts_local_pfx if it is artifact, or buildpacks_local_pfx if it is buildpack
 # 
 # common artifact version scenario, artifact store supports unified latest artifact delivery:
-# afcturl = $(artifact_pfx)/$(appname)/getLatestVersion
+# afcturl = $(artifact_pfx)/$(local_pfx)/$(appname)/getLatestVersion
 # 
 # common artifact version scenario, artifact store only provides filenames (flat web-served filedirectory):
-# afcturl = $(artifact_pfx)/$(appname)-$(artifact_ver).zip
+# afcturl = $(artifact_pfx)/$(local_pfx)/$(appname)-$(artifact_ver).zip
 # 
 # different artifact versions scenario, dummy artifact store, with versions set up in manifests and fallback to artifact_ver if not: 
-afcturl = $(artifact_pfx)/$(appname)/$(appver)/$(appname)-$(appver).zip
+afcturl = $(artifact_pfx)/$(local_pfx)/$(appname)/$(appver)/$(appname)-$(appver).zip
 
 # uncomment the vars below only if you are behind a proxy; otherwise leave as is
 #proxy = http://proxy.mydomain.org:8080/

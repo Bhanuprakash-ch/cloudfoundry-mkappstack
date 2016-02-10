@@ -18,15 +18,17 @@ ruby = ruby -ryaml -rjson -e
 curlcmd = curl -f -k -L
 unzip = unzip -q -o -DD
 
+bpkdir = bpks
 appdir = apps
 svidir = svci
 svcdir = svcs
 sbkdir = sbks
 upsdir = upsi
 srcdir = artifacts
+bscdir = buildpacks
 artifactspack = $(cfspace)_artifacts.tar.gz
  
-LOCALFILES = $(appdir) $(svidir) $(svcdir) $(sbkdir) $(upsdir) $(srcdir) $(artifactspack)
+LOCALFILES = $(bpkdir) $(appdir) $(svidir) $(svcdir) $(sbkdir) $(upsdir) $(srcdir) $(artifactspack)
 
 .PRECIOUS: $(srcdir)/%.zip
 

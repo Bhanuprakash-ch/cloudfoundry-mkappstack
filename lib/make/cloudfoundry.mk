@@ -46,7 +46,7 @@ appstack_file = stack.yml
 .INTERMEDIATE: $(appdir)/%/.appchanged $(svidir)/%/.svichanged $(upsdir)/%/.upschanged $(sbkdir)/%/.sbkchanged 
 
 LOCALFILES += $(cfbindir) $(appstack_file)
-CFOBJFILES = $(appdir)/*/.app $(svidir)/*/.svi $(upsdir)/*/.ups $(svcdir)/*/.svc $(sbkdir)/*/.sbk
+CFOBJFILES = $(bpkdir)/*/.bpk $(appdir)/*/.app $(svidir)/*/.svi $(upsdir)/*/.ups $(svcdir)/*/.svc $(sbkdir)/*/.sbk
 
 cfarchive = $(cfbindir)/cfbin-$(cfbinrel)-$(cfbinver).tar.gz
 cfbinary = $(cfbindir)/cf-$(cfbinrel)-$(cfbinver)
@@ -68,14 +68,14 @@ endif
 appstack_mfst := $(shell [ -s $(appstack_file) ] || lib/ruby/ymlmerge.rb $(stack_mflist) >$(appstack_file); echo $(appstack_file))
 
 BPKS := $(shell $(call r_ymllistdo,$(yml_bpkseq),|bpk| print bpk.fetch("name","")+" ") <$(appstack_mfst))
-DPLBPKS := $(foreach bpk,$(BPKS),$(appdir)/$(bpk)/.bpk)
+DPLBPKS := $(foreach bpk,$(BPKS),$(bpkdir)/$(bpk)/.bpk)
+BPKS_ARTF_NAME := $(shell $(call r_ymllistdo,$(yml_bpkseq),|bpk| print bpk.key?("artifact_name") ? (bpk["artifact_name"]+"-v"+bpk["VERSION"].to_s+" ") : (bpk["name"]+"-v"+bpk["VERSION"].to_s+" ")) <$(appstack_mfst))
 APPS := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app.fetch("name","")+" ") <$(appstack_mfst))
 APPS_ARTF_NAME := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app["env"].key?("artifact_name") ? (app["env"]["artifact_name"]+"-"+app["env"]["VERSION"].to_s+" ") : (app["name"]+"-"+app["env"]["VERSION"].to_s+" ")) <$(appstack_mfst))
-
 DPLAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.app)
 DELAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.appdel)
 REBINDAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.rebindapp)
-ARTFCTS := $(foreach app,$(APPS),$(srcdir)/$(app).zip)
+ARTFCTS := $(foreach bpk,$(BPKS),$(bscdir)/$(bpk).zip) $(foreach app,$(APPS),$(srcdir)/$(app).zip)
 SVIS := $(shell $(call r_ymllistdo,$(yml_sviseq),|svi| print svi.fetch("name","")+" ") <$(appstack_mfst))
 DPLSVIS := $(foreach svi,$(SVIS),$(svidir)/$(svi)/.svi)
 DELSVIS := $(foreach svi,$(SVIS),$(svidir)/$(svi)/.svidel)
@@ -105,8 +105,6 @@ purge_upsis: $(DELUPSI)
 
 purge_brokers: $(DELSBKS)
 
-deploy_buildpacks: $(DPLBPKS)
-
 deploy_applications: $(DPLAPPS)
 
 rebind_applications: $(REBINDAPPS)
@@ -120,7 +118,7 @@ deploy_services: $(DPLSVCS)
 deploy_service_brokers: $(DPLSBKS)
 
 $(artifactspack): $(ARTFCTS)
-	$(shmute)tar -czhf $@ $(foreach app,$(APPS_ARTF_NAME),$(srcdir)/$(app).zip )
+	$(shmute)tar -czhf $@ $(foreach app,$(APPS_ARTF_NAME),$(srcdir)/$(app).zip ) $(foreach bpk,$(BPKS_ARTF_NAME),$(bscdir)/$(bpk).zip )
 
 $(cfarchive): | $(cfbindir)/.dir
 	$(info $(call i_cfdwnld))
@@ -147,18 +145,19 @@ fsclean:
 $(appstack_mfst): $(stack_mflist)
 	$(shmute)lib/ruby/ymlmerge.rb $^ >$@
 
-$(appdir)/%/.bpk:
-	$(eval bpk_name:=$(subst $(appdir)/,,$(@D)))
+$(bpkdir)/%/.bpk: $(bpkdir)/%/.dir $(bscdir)/%.zip | cfset
+	$(eval bpk_name:=$(subst $(bpkdir)/,,$(@D)))
 	$(eval bpk_exist:=$(shell $(cfcall) update-buildpack $(bpk_name) $(devnull); echo $$?))
 	$(eval bpk_ver:=$(shell $(call r_ymllistelemval,$(yml_bpkseq),|bpk| bpk["name"]=="$(bpk_name)",["VERSION"]) <$(appstack_mfst)))
 	$(eval bpk_file:=$(shell echo $(bpk_name)-v$(bpk_ver).zip))
-	$(eval bpk_file_loc:=$(shell echo $(appdir)/$(bpk_name)/$(bpk_file)))
-	$(eval bpk_ver_check:=$(shell if [ "$(bpk_exist)" == "0" ]; then $(cfcall) buildpacks | grep "$(bpk_name) " | grep -q " $(bpk_file)"; echo $$?; fi))
-	$(shmute)if [ "$(bpk_exist)" == "1" -a -f "$(bpk_file_loc)" ]; then echo "$(call i_bpkcrte,$(bpk_name))"; \
+	$(eval bpk_file_loc:=$(shell echo $(bscdir)/$(bpk_file)))
+	$(eval bpk_ver_check:=$(shell if [ "$(bpk_exist)" == "0" ]; then $(cfcall) buildpacks | grep "$(bpk_name) " | grep -q " $(bpk_file)"; echo $$?; else echo "1"; fi))
+	$(shmute)if [ "$(bpk_exist)" != "0" -a -f "$(bpk_file_loc)" ]; then echo "$(call i_bpkcrte,$(bpk_name))"; \
 					elif [ "$(bpk_exist)" == "0" -a -f "$(bpk_file_loc)" ] && [ "$(bpk_ver_check)" == "1" ]; then echo "$(call i_bpkupdt,$(bpk_name))"; \
 					else echo "$(call i_bpknchg,$(bpk_name))"; fi
-	$(shmute)if [ "$(bpk_exist)" == "1" -a -f "$(bpk_file_loc)" ]; then $(cfcall) create-buildpack $(bpk_name) $(bpk_file_loc) 1 --enable $(nulout); fi
+	$(shmute)if [ "$(bpk_exist)" != "0" -a -f "$(bpk_file_loc)" ]; then $(cfcall) create-buildpack $(bpk_name) $(bpk_file_loc) 1 --enable $(nulout); fi
 	$(shmute)if [ "$(bpk_exist)" == "0" -a -f "$(bpk_file_loc)" ] && [ "$(bpk_ver_check)" == "1" ]; then $(cfcall) update-buildpack $(bpk_name) -p $(bpk_file_loc) --enable $(nulout); fi
+	$(shmute)$(cfcall) buildpacks | grep "$(bpk_name) " | grep -q " $(bpk_file)" && touch $@
 	
 $(appdir)/%/.app:
 	$(eval app_name:=$(subst $(appdir)/,,$(@D)))
@@ -271,9 +270,10 @@ $(sbkdir)/%/.sbkdel: $(sbkdir)/%/.dir | cfset
 	$(shmute)echo "$(call i_sbkdele,$(sbk_name))"
 	$(shmute)$(cfcall) delete-service-broker $(sbk_name) -f $(nulout)
 
+ 
 $(appdir)/%/.appdeps: $(appdir)/%/$(applcl_mfst)
 	$(eval appdeps:=$(shell lib/ruby/appdeps.rb $< $(appstack_mfst) $(svidir) $(upsdir) $(appdir)))
-	$(shmute)echo "$(@D)/.app $@: $(appdeps) $^ | $(@D)/.appchanged" >$@
+	$(shmute)echo "$(@D)/.app $@: $(appdeps) $^ $(DPLBPKS) | $(@D)/.appchanged" >$@
 
 $(svidir)/%/.svideps: $(svidir)/%/$(svilcl_mfst)
 	$(eval svideps:=$(svcdir)/$(shell $(call r_svigetdep,$(subst $(svidir)/,,$(@D))) <$<)/.svc)
@@ -362,13 +362,27 @@ $(appdir)/%/$(artifact_mfst): $(srcdir)/%.zip $(appdir)/%/.dir
 	$(info $(call i_appunzp,$(subst $(appdir)/,,$(@D))))
 	$(shmute)$(ruby) 'puts YAML.dump({"$(yml_appseq)" => ""})' >$@
 	$(shmute)$(unzip) -d $(@D) $<
-
+  
+$(bscdir)/%.zip: $(bscdir)/.dir
+	$(eval bpknamereal:=$(basename $(@F)))
+	$(info $(call i_bpkdnld,$(bpknamereal)))
+	$(eval mftsrcurl:=$(shell $(call r_bpkgetattr,$(bpknamereal),["artifact_srcurl"]) <$(appstack_mfst)))
+	$(eval mftafname:=$(shell $(call r_bpkgetattr,$(bpknamereal),["artifact_name"]) <$(appstack_mfst)))
+	$(eval mftbpkver:=$(shell $(call r_bpkgetattr,$(bpknamereal),["VERSION"]) <$(appstack_mfst)))
+	$(eval local_pfx:=$(buildpacks_local_pfx))
+	$(eval appname:=$(if $(mftafname),$(mftafname),$(bpknamereal)))
+	$(eval appver:=$(if $(mftbpkver),$(mftbpkver),$(artifact_ver)))
+	$(eval srcurl:=$(if $(mftsrcurl),$(mftsrcurl),$(afcturl)))
+	$(shmute)$(curl) -o $@ "$(srcurl)" $(nulout); if [ "`echo $$?`" != "0" ]; then echo "$(call i_bpkdler,$(bpknamereal))"; fi
+	$(shmute)ln -snf $(bpknamereal).zip $(bscdir)/$(appname)-v$(appver).zip
+  
 $(srcdir)/%.zip: $(srcdir)/.dir
 	$(eval appnamereal:=$(basename $(@F)))
 	$(info $(call i_appdnld,$(appnamereal)))
 	$(eval mftsrcurl:=$(shell $(call r_appgetattr,$(appnamereal),["env"]["artifact_srcurl"]) <$(appstack_mfst)))
 	$(eval mftafname:=$(shell $(call r_appgetattr,$(appnamereal),["env"]["artifact_name"]) <$(appstack_mfst)))
 	$(eval mftappver:=$(shell $(call r_appgetattr,$(appnamereal),["env"]["VERSION"]) <$(appstack_mfst)))
+	$(eval local_pfx:=$(artifacts_local_pfx))
 	$(eval appname:=$(if $(mftafname),$(mftafname),$(appnamereal)))
 	$(eval appver:=$(if $(mftappver),$(mftappver),$(artifact_ver)))
 	$(eval srcurl:=$(if $(mftsrcurl),$(mftsrcurl),$(afcturl)))

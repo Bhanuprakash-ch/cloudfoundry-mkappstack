@@ -20,6 +20,7 @@ r_ymlelemval = $(ruby) 'puts YAML.load(STDIN.read).fetch("$(1)",[])'
 r_ymllistelemval = $(ruby) 'puts YAML.load(STDIN.read).fetch("$(1)",[]).uniq.find { $(2) }$(3)'
 r_ymllistelemvaljson = $(ruby) 'puts JSON.dump(YAML.load(STDIN.read).fetch("$(1)",[]).uniq.find { $(2) }$(3))'
 r_appgetattr = $(call r_ymllistelemval,$(yml_appseq),|app| app["name"]=="$(1)",$(2))
+r_bpkgetattr = $(call r_ymllistelemval,$(yml_bpkseq),|bpk| bpk["name"]=="$(1)",$(2))
 r_svigetdep = $(call r_ymllistelemval,$(yml_sviseq),|svi| svi["name"]=="$(1)",["service_plan"]["service"]["label"])
 r_svcgetdep = $(call r_ymllistelemval,$(yml_sviseq),|svi| svi["service_plan"]["service"]["label"]=="$(1)",["service_plan"]["service"]["broker"])
 #r_ymlGetLstElemByNamedVal = $(ruby) 'puts YAML.dump(Hash["$(1)",[YAML.load(STDIN.read)["$(1)"].find { |elem| elem["$(2)"]=="$(3)" }.sort.to_h]])'

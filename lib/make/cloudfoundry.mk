@@ -33,6 +33,7 @@ yml_appseq = applications
 yml_upsseq = user_provided_service_instances
 yml_sbkseq = service_brokers
 yml_sviseq = service_instances
+yml_sviacs = service_accesses
 yml_svcseq = services
 yml_appdmn = apps_domain
 yml_timeout = timeout
@@ -83,7 +84,9 @@ UPSI := $(shell $(call r_ymllistdo,$(yml_upsseq),|ups| print ups.fetch("name",""
 DPLUPSI := $(foreach ups,$(UPSI),$(upsdir)/$(ups)/.ups)
 DELUPSI := $(foreach ups,$(UPSI),$(upsdir)/$(ups)/.upsdel)
 SVCS := $(sort $(shell $(call r_ymllistdo,$(yml_sviseq),|svc| print svc["service_plan"]["service"]["label"]+" ") <$(appstack_mfst)))
+SVCACS := $(shell $(call r_ymllistdo,$(yml_sviacs),|svc| print svc.fetch("name","")+" ") <$(appstack_mfst))
 DPLSVCS := $(foreach svc,$(SVCS),$(svcdir)/$(svc)/.svc)
+ENBLSVCS := $(foreach svc,$(SVCACS),$(svcdir)/$(svc)/.svc)
 DELSVCS := $(foreach svc,$(SVCS),$(svcdir)/$(svc)/.svcdel)
 SBKS := $(shell $(call r_ymllistdo,$(yml_sbkseq),|sbk| print sbk.fetch("name","")+" ") <$(appstack_mfst))
 DPLSBKS := $(foreach sbk,$(SBKS),$(sbkdir)/$(sbk)/.sbk)
@@ -94,6 +97,7 @@ ifeq ($(filter $(MAKECMDGOALS),$(MAKEFILE_TARGETS_WITHOUT_INCLUDE)),)
   -include $(DPLSVIS:$(svidir)/%/.svi=$(svidir)/%/.svideps)
   -include $(DPLUPSI:$(upsdir)/%/.ups=$(upsdir)/%/.upsdeps)
   -include $(DPLSVCS:$(svcdir)/%/.svc=$(svcdir)/%/.svcdeps)
+  -include $(ENBLSVCS:$(svcdir)/%/.svc=$(svcdir)/%/.svcdeps)
   -include $(DPLSBKS:$(sbkdir)/%/.sbk=$(sbkdir)/%/.sbkdeps)
 endif
 
@@ -114,6 +118,8 @@ deploy_service_instances: $(DPLSVIS)
 deploy_user_provided_service_instances: $(DPLUPSI)
 
 deploy_services: $(DPLSVCS)
+
+enable_services: $(ENBLSVCS)
 
 deploy_service_brokers: $(DPLSBKS)
 

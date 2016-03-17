@@ -70,7 +70,7 @@ appstack_mfst := $(shell [ -s $(appstack_file) ] || lib/ruby/ymlmerge.rb $(stack
 
 BPKS := $(shell $(call r_ymllistdo,$(yml_bpkseq),|bpk| print bpk.fetch("name","")+" ") <$(appstack_mfst))
 DPLBPKS := $(foreach bpk,$(BPKS),$(bpkdir)/$(bpk)/.bpk)
-BPKS_ARTF_NAME := $(shell $(call r_ymllistdo,$(yml_bpkseq),|bpk| print bpk.key?("artifact_name") ? (bpk["artifact_name"]+"-v"+bpk["VERSION"].to_s+" ") : (bpk["name"]+"-v"+bpk["VERSION"].to_s+" ")) <$(appstack_mfst))
+BPKS_ARTF_NAME := $(shell $(call r_ymllistdo,$(yml_bpkseq),|bpk| print bpk.key?("artifact_name") ? (bpk["artifact_name"]+"-"+bpk["VERSION"].to_s+" ") : (bpk["name"]+"-"+bpk["VERSION"].to_s+" ")) <$(appstack_mfst))
 APPS := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app.fetch("name","")+" ") <$(appstack_mfst))
 APPS_ARTF_NAME := $(shell $(call r_ymllistdo,$(yml_appseq),|app| print app["env"].key?("artifact_name") ? (app["env"]["artifact_name"]+"-"+app["env"]["VERSION"].to_s+" ") : (app["name"]+"-"+app["env"]["VERSION"].to_s+" ")) <$(appstack_mfst))
 DPLAPPS := $(foreach app,$(APPS),$(appdir)/$(app)/.app)
@@ -156,7 +156,7 @@ $(bpkdir)/%/.bpk: $(bpkdir)/%/.dir $(bscdir)/%.zip | cfset
 	$(eval bpk_exist:=$(shell $(cfcall) update-buildpack $(bpk_name) $(devnull); echo $$?))
 	$(eval mftbpkver:=$(shell $(call r_bpkgetattr,$(bpk_name),.fetch("VERSION","")) <$(appstack_mfst)))
 	$(eval bpk_ver:=$(if $(mftbpkver),$(mftbpkver),$(artifact_ver)))
-	$(eval bpk_file:=$(shell echo $(bpk_name)-v$(bpk_ver).zip))
+	$(eval bpk_file:=$(shell echo $(bpk_name)-$(bpk_ver).zip))
 	$(eval bpk_file_loc:=$(shell echo $(bscdir)/$(bpk_file)))
 	$(eval bpk_ver_check:=$(shell if [ "$(bpk_exist)" == "0" ]; then $(cfcall) buildpacks | grep "$(bpk_name) " | grep -q " $(bpk_file)"; echo $$?; else echo "1"; fi))
 	$(shmute)if [ "$(bpk_exist)" != "0" -a -f "$(bpk_file_loc)" ]; then echo "$(call i_bpkcrte,$(bpk_name))"; \
@@ -385,7 +385,7 @@ $(bscdir)/%.zip: $(bscdir)/.dir
 	$(eval appver:=$(if $(mftbpkver),$(mftbpkver),$(artifact_ver)))
 	$(eval srcurl:=$(if $(mftsrcurl),$(mftsrcurl),$(afcturl)))
 	$(shmute)$(curl) -o $@ "$(srcurl)" $(nulout); if [ "`echo $$?`" != "0" ]; then echo "$(call i_bpkdler,$(bpknamereal))"; fi
-	$(shmute)ln -snf $(bpknamereal).zip $(bscdir)/$(appname)-v$(appver).zip
+	$(shmute)ln -snf $(bpknamereal).zip $(bscdir)/$(appname)-$(appver).zip
   
 $(srcdir)/%.zip: $(srcdir)/.dir
 	$(eval appnamereal:=$(basename $(@F)))

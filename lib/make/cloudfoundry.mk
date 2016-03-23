@@ -188,7 +188,7 @@ $(appdir)/%/.app:
 		  auth_username=`cat $(appdir)/$(register_in)/$(applcl_mfst) | $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_USER",""))`; \
           auth_password=`cat $(appdir)/$(register_in)/$(applcl_mfst) | $(call r_appgetattr,$(register_in),.fetch("env",{}).fetch("AUTH_PASS",""))`; \
 	      $(appdir)/$(register_in)/register.sh -b "http://$(register_in).$(domain)" -u "$$auth_username" -p "$$auth_password" -a "$(app_name)" -n "$(app_name)" -s "$(disp_name)" -d "$(desc)" -i "$(image_url)"; \
-	fi; \
+	fi;
 	$(shmute)rm -f $|
 	$(shmute)touch $@
 

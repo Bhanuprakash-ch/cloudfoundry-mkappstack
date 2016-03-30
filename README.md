@@ -1,4 +1,9 @@
 # cloudfoundry-mkappstack
+
+**Obsolete** as of 2016-03-30. All new application deployments will be done with [Apployer] (https://github.com/trustedanalytics/apployer) tool.
+
+---
+
 Simple automation to create a CF multi application stack.
 
 Description

@@ -162,9 +162,9 @@ $(appdir)/%/.bpk:
 	
 $(appdir)/%/.app:
 	$(eval app_name:=$(subst $(appdir)/,,$(@D)))
-	$(eval app_path:=$(shell $(call r_ymllistelemval,$(yml_appseq),|app| app["name"]=="$(app_name)",["path"]) <$(@D)/$(applcl_mfst)))
+	$(eval app_path:=$(shell $(call r_ymllistelemval,$(yml_appseq),|app| app["name"]=="$(app_name)",.fetch("path",".")) <$(@D)/$(applcl_mfst)))
 	$(eval app_dead:=$(shell $(cfcall) app $(app_name) | grep -q "\ running\ "; echo $$?))
-	$(eval app_services:=$(shell $(call r_ymllistelemval,$(yml_appseq),|app| app["name"]=="$(app_name)",["services"]) <$(@D)/$(apprmt_mfst)))
+	$(eval app_services:=$(shell $(call r_ymllistelemval,$(yml_appseq),|app| app["name"]=="$(app_name)",.fetch("services",[])) <$(@D)/$(apprmt_mfst)))
 	$(shmute)if [ -f $| ]; then for bsvc in $(app_services); do \
           echo "unbinding application: $(app_name) (service: $${bsvc})"; \
           $(cfcall) unbind-service $(app_name) $${bsvc} $(nulout); \
@@ -192,7 +192,7 @@ $(appdir)/%/.appdel: $(appdir)/%/.dir | cfset
 
 $(appdir)/%/.rebindapp:
 	$(eval app_name:=$(subst $(appdir)/,,$(@D)))
-	$(eval app_services:=$(shell $(call r_ymllistelemval,$(yml_appseq),|app| app["name"]=="$(app_name)",["services"]) <$(@D)/$(applcl_mfst)))
+	$(eval app_services:=$(shell $(call r_ymllistelemval,$(yml_appseq),|app| app["name"]=="$(app_name)",.fetch("services",[])) <$(@D)/$(applcl_mfst)))
 	$(shmute)if [ -f $| ]; then for bsvc in $(app_services); do \
           echo "rebind application: $(app_name) (service: $${bsvc})"; \
           $(cfcall) unbind-service $(app_name) $${bsvc} $(nulout); \
@@ -206,8 +206,8 @@ $(appdir)/%/.rebindapp:
 $(svidir)/%/.svi:
 	$(eval svi_name:=$(subst $(svidir)/,,$(@D)))
 	$(eval svi_missing:=$(shell $(cfcall) service $(svi_name) $(devnull); echo $$?))
-	$(eval svi_service:=$(shell $(call r_ymllistelemval,$(yml_sviseq),|svi| svi["name"]=="$(svi_name)",["service_plan"]["service"]["label"]) <$(@D)/$(svilcl_mfst)))
-	$(eval svi_plan:=$(shell $(call r_ymllistelemval,$(yml_sviseq),|svi| svi["name"]=="$(svi_name)",["service_plan"]["name"]) <$(@D)/$(svilcl_mfst)))
+	$(eval svi_service:=$(shell $(call r_ymllistelemval,$(yml_sviseq),|svi| svi["name"]=="$(svi_name)",.fetch("service_plan",[]).fetch("service",[]).fetch("label",[])) <$(@D)/$(svilcl_mfst)))
+	$(eval svi_plan:=$(shell $(call r_ymllistelemval,$(yml_sviseq),|svi| svi["name"]=="$(svi_name)",.fetch("service_plan",[]).fetch("name","")) <$(@D)/$(svilcl_mfst)))
 	$(shmute)if [ "$(svi_missing)" == "1" ]; then $(cfcall) cs $(svi_service) $(svi_plan) $(svi_name) $(nulout); fi
 	$(shmute)if [ -f $| -a "$(svi_missing)" == "0" ]; then $(cfcall) update-service $(svi_name) -p $(svi_plan) $(nulout); fi
 	$(shmute)rm -f $|
@@ -222,7 +222,7 @@ $(svidir)/%/.svidel: $(svidir)/%/.dir | cfset
 $(upsdir)/%/.ups:
 	$(eval upsi_name:=$(subst $(upsdir)/,,$(@D)))
 	$(eval upsi_missing:=$(shell $(cfcall) service $(upsi_name) $(devnull); echo $$?))
-	$(eval upsi_creds:=$(shell $(call r_ymllistelemvaljson,$(yml_upsseq),|ups| ups["name"]=="$(upsi_name)",["credentials"]) <$(@D)/$(upslcl_mfst)))
+	$(eval upsi_creds:=$(shell $(call r_ymllistelemvaljson,$(yml_upsseq),|ups| ups["name"]=="$(upsi_name)",.fetch("credentials","")) <$(@D)/$(upslcl_mfst)))
 	$(eval upsi_boundapps:=$(shell $(call r_ymllistdo,$(yml_appseq),|app| if app["services"]; if app["services"].include?("$(upsi_name)"); print app["name"]+" " end end ) <$(appstack_mfst)))
 	$(shmute)if [ "$(upsi_missing)" != "0" ]; then echo "$(call i_upscrte,$(upsi_name))"; fi
 	$(shmute)if [ "$(upsi_missing)" != "0" ]; then $(cfcall) cups $(upsi_name) -p '$(upsi_creds)' $(nulout); fi
@@ -256,9 +256,9 @@ $(svcdir)/%/.svcdel: $(svcdir)/%/.dir | cfset
 $(sbkdir)/%/.sbk:
 	$(eval sbk_name:=$(subst $(sbkdir)/,,$(@D)))
 	$(eval sbk_missing:=$(shell $(cfcall) service-brokers | grep -q "^$(sbk_name)\ "; echo $$?))
-	$(eval auth_username:=$(shell $(call r_ymllistelemval,$(yml_sbkseq),|sbk| sbk["name"]=="$(sbk_name)",["auth_username"]) <$(@D)/$(sbklcl_mfst)))
-	$(eval auth_password:=$(shell $(call r_ymllistelemval,$(yml_sbkseq),|sbk| sbk["name"]=="$(sbk_name)",["auth_password"]) <$(@D)/$(sbklcl_mfst)))
-	$(eval broker_url:=$(shell $(call r_ymllistelemval,$(yml_sbkseq),|sbk| sbk["name"]=="$(sbk_name)",["broker_url"]) <$(@D)/$(sbklcl_mfst)))
+	$(eval auth_username:=$(shell $(call r_ymllistelemval,$(yml_sbkseq),|sbk| sbk["name"]=="$(sbk_name)",.fetch("auth_username","")) <$(@D)/$(sbklcl_mfst)))
+	$(eval auth_password:=$(shell $(call r_ymllistelemval,$(yml_sbkseq),|sbk| sbk["name"]=="$(sbk_name)",.fetch("auth_password","")) <$(@D)/$(sbklcl_mfst)))
+	$(eval broker_url:=$(shell $(call r_ymllistelemval,$(yml_sbkseq),|sbk| sbk["name"]=="$(sbk_name)",.fetch("broker_url","")) <$(@D)/$(sbklcl_mfst)))
 	$(shmute)if [ "$(sbk_missing)" != "0" ]; then echo "$(call i_sbkcrte,$(sbk_name))"; fi
 	$(shmute)if [ "$(sbk_missing)" != "0" ]; then $(cfcall) create-service-broker $(sbk_name) $(auth_username) $(auth_password) $(broker_url) $(nulout); fi
 	$(shmute)if [ -f $| -a "$(sbk_missing)" == "0" ]; then echo "$(call i_sbkupdt,$(sbk_name))"; fi
@@ -280,7 +280,7 @@ $(svidir)/%/.svideps: $(svidir)/%/$(svilcl_mfst)
 	$(shmute)echo "$(@D)/.svi $@: $(svideps) $^ | $(@D)/.svichanged" >$@
 
 $(svcdir)/%/.svcdeps: $(svcdir)/%/$(svclcl_mfst)
-	$(eval svcdeps:=$(sbkdir)/$(shell $(call r_ymllistelemval,$(yml_svcseq),|svc| svc,["broker"]) <$<)/.sbk)
+	$(eval svcdeps:=$(sbkdir)/$(shell $(call r_ymllistelemval,$(yml_svcseq),|svc| svc,.fetch("broker","")) <$<)/.sbk)
 	$(shmute)echo "$(@D)/.svc $@: $(svcdeps) $^" >$@
 
 $(upsdir)/%/.upsdeps: $(appstack_mfst) $(upsdir)/%/$(upslcl_mfst)

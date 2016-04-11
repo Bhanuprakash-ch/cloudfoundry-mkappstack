@@ -17,8 +17,8 @@
 r_ymlcmpr = $(ruby) 'exit YAML::load(File.open("$(1)"))==YAML::load(File.open("$(2)"))'
 r_ymllistdo = $(ruby) 'YAML.load(STDIN.read).fetch("$(1)",[]).each { $(2) }'
 r_ymlelemval = $(ruby) 'puts YAML.load(STDIN.read).fetch("$(1)",[])'
-r_ymllistelemval = $(ruby) 'puts YAML.load(STDIN.read).fetch("$(1)",[]).uniq.find { $(2) }$(3)'
-r_ymllistelemvaljson = $(ruby) 'puts JSON.dump(YAML.load(STDIN.read).fetch("$(1)",[]).uniq.find { $(2) }$(3))'
+r_ymllistelemval = $(ruby) 'puts YAML.load(STDIN.read).fetch("$(1)",[]).uniq.find(->{{}}) { $(2) }$(3)'
+r_ymllistelemvaljson = $(ruby) 'puts JSON.dump(YAML.load(STDIN.read).fetch("$(1)",[]).uniq.find(->{{}}) { $(2) }$(3))'
 r_appgetattr = $(call r_ymllistelemval,$(yml_appseq),|app| app["name"]=="$(1)",$(2))
 r_svigetdep = $(call r_ymllistelemval,$(yml_sviseq),|svi| svi["name"]=="$(1)",["service_plan"]["service"]["label"])
 r_svcgetdep = $(call r_ymllistelemval,$(yml_sviseq),|svi| svi["service_plan"]["service"]["label"]=="$(1)",["service_plan"]["service"]["broker"])
